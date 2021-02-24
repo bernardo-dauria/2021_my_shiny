@@ -8,19 +8,24 @@
 #
 
 library(shiny)
+library(tidyverse)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
     titlePanel("This is a new Shiny app"),
-    includeMarkdown("references.md")
+    includeMarkdown("references.md"),
+    h3("Plots"),
+    plotOutput(outputId = "hello")
     
 )
-
+data = runif(20)
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    
+    output$hello <- renderPlot({
+        plot(data)
+    })
 }
 
 # Run the application 
