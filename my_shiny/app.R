@@ -10,21 +10,35 @@
 library(shiny)
 library(tidyverse)
 
+list_choices <-  unique(msleep$vore)
+list_choices <- list_choices[!is.na(list_choices)]
+names(list_choices) <- paste0(list_choices,"vore")
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
     titlePanel("This is a new Shiny app"),
     includeMarkdown("references.md"),
+    selectInput("select", label = h3("Plot by type of alimentation"), 
+             choices = list_choices,
+             selected = 1),
     h3("Plots"),
     plotOutput(outputId = "hello")
     
 )
-data = runif(20)
+
+col_scale <- scale_colour_discrete(limits = list_choices)
+
+
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     output$hello <- renderPlot({
-        plot(data)
+        ggplot(msleep %>% filter(vore == input$select)
+               , aes(bodywt, sleep_total, colour = vore)) +
+            scale_x_log10() +
+            col_scale +
+            geom_point()
     })
 }
 
