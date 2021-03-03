@@ -9,6 +9,7 @@
 
 library(shiny)
 library(tidyverse)
+library(shinyjs)
 
 list_choices <-  unique(msleep$vore)
 list_choices <- list_choices[!is.na(list_choices)]
@@ -35,8 +36,15 @@ tabPanel("Random generator",
                         selected = 1),
             sliderInput("n_sample", label = h3("Number of samples"), min = 10, 
                         max = 100, value = 20),
-            sliderInput("n_bins", label = h3("Number of bins"), min = 1, 
-                        max = 50, value = 30)
+            fluidRow(
+                h3(style = "margin-left: 20px; margin-bottom: 0px;", "Number of bins"),
+                column(2,
+                       div(style = "margin-top: 37px", checkboxInput("auto_bins", label = "auto", value = TRUE))
+                ),
+                column(10,
+                       sliderInput("n_bins", label="", min = 1, max = 50, value = 30)
+                )
+            )
         ),
         mainPanel(
             plotOutput(outputId = "pulpo")
@@ -51,7 +59,8 @@ tabPanel("References",
              div(class="card card-body",
                  includeMarkdown("references.md")
              ))
-) #  titlePanel
+), #  tabPanel
+useShinyjs()
 ) # navbarPage
 
 col_scale <- scale_colour_discrete(limits = list_choices)
@@ -68,7 +77,13 @@ server <- function(input, output) {
     })
     
     cmd = reactive(eval(parse(text=paste0(input$dist,"(",input$n_sample,")"))));
-    output$pulpo <- renderPlot(hist(cmd()))
+    
+    observe(if(input$auto_bins) disable("n_bins") else enable("n_bins") )
+    
+    output$pulpo <- renderPlot(
+        if(input$auto_bins) hist(cmd()) 
+        else hist(cmd(), breaks=input$n_bins)
+    );
 }
 
 # Run the application 
