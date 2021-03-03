@@ -25,7 +25,8 @@ ui <- navbarPage("Shiny app",
                     selected = 1)
     ), mainPanel(
         h3("Plots"),
-        plotOutput(outputId = "hello")
+        plotOutput(outputId = "hello", click = "plot_click"),
+        tableOutput("info")
     )
 ))),
 tabPanel("Random generator",
@@ -79,6 +80,13 @@ server <- function(input, output) {
             col_scale +
             geom_point()
     })
+    
+    output$info <- renderTable(
+        nearPoints(msleep  
+                   %>% select(name, bodywt,  sleep_total, sleep_rem ), 
+                   input$plot_click, threshold = 100, maxpoints = 3,
+                   addDist = TRUE)
+    )
     
     samples <- reactive({
         dist <- eval(parse(text=paste(input$dist)))
