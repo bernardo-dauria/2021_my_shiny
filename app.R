@@ -27,6 +27,21 @@ ui <- navbarPage("Shiny app",
         plotOutput(outputId = "hello")
     )
 ))),
+tabPanel("Random generator",
+         sidebarLayout(position = "right",
+        sidebarPanel(
+            selectInput("dist", label = h3("Select the distribution"), 
+                        choices = list(Normal="rnorm", Uniform="runif", Exponential="rexp"),
+                        selected = 1),
+            sliderInput("n_sample", label = h3("Number of samples"), min = 10, 
+                        max = 100, value = 20),
+            sliderInput("n_bins", label = h3("Number of bins"), min = 1, 
+                        max = 50, value = 30)
+        ),
+        mainPanel(
+            plotOutput(outputId = "pulpo")
+        )) # sidebarLayout
+         ),
 tabPanel("References",
          p(tags$button(class="btn btn-default", 
                        `data-toggle`="collapse", 
@@ -51,6 +66,9 @@ server <- function(input, output) {
             col_scale +
             geom_point()
     })
+    
+    cmd = reactive(eval(parse(text=paste0(input$dist,"(",input$n_sample,")"))));
+    output$pulpo <- renderPlot(hist(cmd()))
 }
 
 # Run the application 
