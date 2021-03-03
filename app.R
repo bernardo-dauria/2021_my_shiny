@@ -47,7 +47,11 @@ tabPanel("Random generator",
             )
         ),
         mainPanel(
-            plotOutput(outputId = "pulpo")
+            tabsetPanel(type = "tabs",
+                tabPanel("Plot", plotOutput("histPlot")),
+                tabPanel("Summary", verbatimTextOutput("histSummary")),
+                tabPanel("Table", tableOutput("histTable"))
+            )
         )) # sidebarLayout
          ),
 tabPanel("References",
@@ -76,14 +80,20 @@ server <- function(input, output) {
             geom_point()
     })
     
-    cmd = reactive(eval(parse(text=paste0(input$dist,"(",input$n_sample,")"))));
+    samples <- reactive({
+        dist <- eval(parse(text=paste(input$dist)))
+        dist(input$n_sample)
+    })
     
     observe(if(input$auto_bins) disable("n_bins") else enable("n_bins") )
     
-    output$pulpo <- renderPlot(
-        if(input$auto_bins) hist(cmd()) 
-        else hist(cmd(), breaks=input$n_bins)
+    output$histPlot <- renderPlot(
+        hist(samples(), main="Random Generation", 
+              breaks = if(!input$auto_bins) {input$n_bins} else {"Sturges"})
     );
+    
+    output$histSummary <- renderPrint(summary(samples()))
+    output$histTable <- renderTable(samples())
 }
 
 # Run the application 
