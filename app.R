@@ -37,6 +37,7 @@ tabPanel("Random generator",
                         selected = 1),
             sliderInput("n_sample", label = h3("Number of samples"), min = 10, 
                         max = 100, value = 20),
+            actionButton("goButton", "Go!"),
             fluidRow(
                 h3(style = "margin-left: 20px; margin-bottom: 0px;", "Number of bins"),
                 column(2,
@@ -45,7 +46,8 @@ tabPanel("Random generator",
                 column(10,
                        sliderInput("n_bins", label="", min = 1, max = 50, value = 30)
                 )
-            )
+            ),
+            downloadButton("report", "Generate report")
         ),
         mainPanel(
             tabsetPanel(type = "tabs",
@@ -89,8 +91,9 @@ server <- function(input, output) {
     )
     
     samples <- reactive({
+        input$goButton;
         dist <- eval(parse(text=paste(input$dist)))
-        dist(input$n_sample)
+        dist(isolate(input$n_sample))
     })
     
     observe(if(input$auto_bins) disable("n_bins") else enable("n_bins") )
@@ -102,6 +105,33 @@ server <- function(input, output) {
     
     output$histSummary <- renderPrint(summary(samples()))
     output$histTable <- renderTable(samples())
+    
+    output$report <- downloadHandler(
+        # For PDF output, change this to "report.pdf"
+        filename = "report.html",
+        content = function(file) {
+            # Copy the report file to a temporary directory before processing it, in
+            # case we don't have write permissions to the current working dir (which
+            # can happen when deployed).
+            tempReport <- file.path(tempdir(), "report.Rmd")
+            file.copy("report.Rmd", tempReport, overwrite = TRUE)
+            
+            # Set up parameters to pass to Rmd document
+            params <- list(
+                n_sample = isolate(input$n_sample), 
+                dist = isolate(input$dist), 
+                breaks = if(!isolate(input$auto_bins)) {isolate(input$n_bins)} else {"Sturges"}
+            )
+            
+            # Knit the document, passing in the `params` list, and eval it in a
+            # child of the global environment (this isolates the code in the document
+            # from the code in this app).
+            rmarkdown::render(tempReport, output_file = file,
+                              params = params,
+                              envir = new.env(parent = globalenv())
+            )
+        }
+    )
 }
 
 # Run the application 
